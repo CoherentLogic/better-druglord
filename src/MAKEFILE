@@ -1,0 +1,23 @@
+OBJS = main.o region.o ioevent.o dlscreen.o level.o
+
+druglord.exe: $(OBJS) 
+	fbc -x druglord.exe $(OBJS)
+
+main.o: main.bas
+	fbc -m main -c main.bas
+
+region.o: region.bas
+	fbc -c region.bas
+
+ioevent.o: ioevent.bas
+	fbc -c ioevent.bas
+
+dlscreen.o: dlscreen.bas
+	fbc -c dlscreen.bas
+
+level.o: level.bas
+	fbc -c level.bas
+
+clean:
+	rm *.o
+	rm druglord
