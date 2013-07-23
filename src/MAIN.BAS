@@ -2,10 +2,10 @@
 ' main.bas
 '  druglord main file
 '
-#include "ioevent.bi"
-#include "region.bi"
-#include "dlscreen.bi"
-#include "level.bi"
+#include "IOEVENT.BI"
+#include "REGION.BI"
+#include "DLSCREEN.BI"
+#include "LEVEL.BI"
 
 '*** declarations
 declare function dl_main() as integer

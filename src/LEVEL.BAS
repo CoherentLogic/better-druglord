@@ -2,12 +2,12 @@
 ' level.bas
 '
 
-#include "ioevent.bi"
-#include "region.bi"
-#include "dlscreen.bi"
-#include "level.bi"
+#include "IOEVENT.BI"
+#include "REGION.BI"
+#include "DLSCREEN.BI"
+#include "LEVEL.BI"
+#include "FACTION.BI"
 #include "file.bi"
-#include "faction.bi"
 
 extern input_mode as integer
 
@@ -40,9 +40,9 @@ public sub level_editor()
             case IEVT_MOTION_RIGHT
                 le_set_coords(level_current_row, level_current_col + 1)
             case IEVT_HELP
-                text_to_region(sridx_dialog, 1, 1, "Help")
+                
             case IEVT_SAVE
-                text_to_region(sridx_dialog, 1, 1, "Save")
+                le_file_write()
             case IEVT_REFRESH
                 level_repaint_flag = 1
             case IEVT_KEYPRESS
@@ -51,6 +51,8 @@ public sub level_editor()
                         le_set_data(ELEM_WALL, 0)
                     case "n"
                         le_set_npc()
+                    case "v"
+                        le_set_vendor()
                 end select
             case IEVT_ERASE_RIGHT
                 le_set_data(ELEM_NONE, 0)
@@ -72,6 +74,8 @@ public sub level_editor_init()
     level_dirty = 0    
 
     line input "Filename? ", level_filename
+
+    level_filename = ucase(left(level_filename, 8)) + ".DLV"
 
     if not fileexists(level_filename) then
         input "Pages? ", level_total_pages
@@ -99,8 +103,10 @@ public sub level_editor_init()
         for i = 0 to le_header.vendor_count - 1
             le_init_vendor(i)
         next i
-    else
 
+        level_dirty = 1
+    else
+        le_file_load(level_filename)
     end if
 
     cls
@@ -115,6 +121,44 @@ public sub level_editor_init()
     text_to_region(sridx_moniker, 1, 1, "Level Editor")    
     le_set_page(1)
     le_set_coords(20, 30)
+end sub
+
+public sub le_file_write()
+    
+    '
+    ' file layout
+    '   HEADER
+    '   NPC RECORDS
+    '   VENDOR RECORDS
+    '   PAGE RECORDS
+    '
+
+    dim i as integer
+    dim file_number as integer
+    file_number = freefile
+
+    open level_filename for binary as #file_number
+
+    le_header.magic = "DLEL"
+    put #file_number, , le_header
+
+    for i = 0 to le_header.npc_count - 1
+        put #file_number, , le_npcs(i)
+    next i
+
+    for i = 0 to le_header.vendor_count - 1
+        put #file_number, , le_vendors(i)
+    next i
+
+    for i = 0 to le_header.page_count - 1
+        put #file_number, , le_pages(i)
+    next i
+
+    close #file_number 
+    level_dirty = 0
+
+    clear_region(sridx_dialog)
+    text_to_region(sridx_dialog, 1, 1, "Level saved as " + level_filename)
 end sub
 
 public sub le_file_load(filename as string)
@@ -146,7 +190,8 @@ public sub le_file_load(filename as string)
         text_to_region(sridx_dialog, 1, 1, "ERROR: Invalid file format or file corrupt")
         exit sub
     end if
-
+  
+    level_total_pages = le_header.page_count
     redim le_pages(le_header.page_count) as page_record
     redim le_npcs(le_header.npc_count) as npc_record
     redim le_vendors(le_header.vendor_count) as vendor_record
@@ -166,6 +211,7 @@ public sub le_file_load(filename as string)
     close #file_number
     
     level_repaint_flag = 1
+    le_set_page(1)
 
 end sub
 
@@ -187,7 +233,24 @@ public sub le_set_npc()
 
     le_set_data(ELEM_NPC, npc_idx)
     clear_region(sridx_dialog)
+    
+    level_dirty = 1
+    level_repaint_flag = 1    
+end sub
 
+public sub le_set_vendor()
+    dim vendor_idx as integer
+    dim prompt as string
+
+    clear_region(sridx_dialog)
+    prompt = "Choose Vendor (0-" + ltrim(rtrim(str(le_header.vendor_count - 1))) + "): "
+    
+    vendor_idx = get_integer_region(sridx_dialog, 1, 1, prompt)
+
+    le_set_data(ELEM_VENDOR, vendor_idx)
+    clear_region(sridx_dialog)
+    
+    level_dirty = 1
     level_repaint_flag = 1    
 end sub
 
@@ -205,7 +268,9 @@ public sub le_repaint()
                 case ELEM_WALL
                     txt = "."  
                 case ELEM_NPC
-                    txt = "N"              
+                    txt = "N"
+                case ELEM_VENDOR
+                    txt = "V"              
             end select
             
             text_to_region(sridx_playfield, r, c, txt)            
@@ -288,18 +353,95 @@ public sub le_init_npc(idx as integer)
     input      " Level (1-100):     ", le_npcs(idx).level
 
     le_npcs(idx).faction = le_choose_faction()
-    le_npcs(idx).weapon = le_choose_weapon()
-        
-
+    le_npcs(idx).weapon = le_choose_weapon()        
 end sub
 
 public sub le_init_vendor(idx as integer)
+    print "Vendor " + ltrim(rtrim(str(idx))) + " Parameters:"
+    print
+
+    le_vendors(idx).index = idx
+
+    line input " Name:              ", le_vendors(idx).vendor_name
+    line input " Hostile Greeting:  ", le_vendors(idx).vendor_hostile_greeting
+    line input " Neutral Greeting:  ", le_vendors(idx).vendor_neutral_greeting
+    line input " Friendly Greeting: ", le_vendors(idx).vendor_friendly_greeting
+    line input " Honored Greeting:  ", le_vendors(idx).vendor_honored_greeting
+    line input " Revered Greeting:  ", le_vendors(idx).vendor_revered_greeting
+    line input " Exalted Greeting:  ", le_vendors(idx).vendor_exalted_greeting
+    
+    le_vendors(idx).faction = le_choose_faction()
+    le_vendors(idx).weapon = le_choose_weapon()
+
+    le_vendors(idx).stock_cannabis = le_yes_no("Vendor stocks cannabis? ")
+    if le_vendors(idx).stock_cannabis = 1 then
+        input "Cannabis price/gm: ", le_vendors(idx).price_cannabis
+    end if
+
+    le_vendors(idx).stock_cocaine = le_yes_no("Vendor stocks cocaine? ")
+    if le_vendors(idx).stock_cocaine = 1 then
+        input "Cocaine price/gm: ", le_vendors(idx).price_cocaine
+    end if
+
+    le_vendors(idx).stock_heroin = le_yes_no("Vendor stocks heroin? ")
+    if le_vendors(idx).stock_heroin = 1 then
+        input "Heroin price/gm: ", le_vendors(idx).price_heroin
+    end if
+
+    le_vendors(idx).stock_knives = le_yes_no("Vendor stocks knives? ")
+    if le_vendors(idx).stock_knives = 1 then
+        input "Knives price/ea: ", le_vendors(idx).price_knives
+    end if
+
+    le_vendors(idx).stock_brassknuckles = le_yes_no("Vendor stocks brass knuckles? ")
+    if le_vendors(idx).stock_brassknuckles = 1 then
+        input "Brass knuckles price/ea: ", le_vendors(idx).price_brassknuckles
+    end if
+
+    le_vendors(idx).stock_handguns = le_yes_no("Vendor stocks handguns? ")
+    if le_vendors(idx).stock_handguns = 1 then
+        input "Handguns price/ea: ", le_vendors(idx).price_handguns
+    end if
+
+    le_vendors(idx).stock_rifles = le_yes_no("Vendor stocks rifles? ")
+    if le_vendors(idx).stock_rifles = 1 then
+        input "Rifles price/ea: ", le_vendors(idx).price_rifles
+    end if
+
+    le_vendors(idx).stock_machineguns = le_yes_no("Vendor stocks machine guns? ")
+    if le_vendors(idx).stock_machineguns = 1 then
+        input "Machine guns price/ea: ", le_vendors(idx).price_machineguns
+    end if
+
 
 end sub
+
+public function le_yes_no(prompt as string) as integer
+    dim e as integer
+
+lprompt:
+    print prompt;" (Y/N): ";
+
+    do until e <> IEVT_NONE
+        e = get_next_event(input_mode)
+    loop
+
+    select case ucase(last_key_pressed)
+        case "Y"
+            return 1
+        case "N"
+            return 0
+        case else
+            print "Invalid response. Must choose Y or N."
+            goto lprompt
+    end select
+    
+end function
 
 public function le_choose_weapon() as integer
     dim wep as integer
 
+    print
     print "Choose Weapon: "
     print
     print "0. None"
@@ -318,6 +460,7 @@ end function
 public function le_choose_faction() as integer
     dim fac as integer
 
+    print
     print "Choose Faction: "
     print
     print "0. Mexican Military"

@@ -1,7 +1,7 @@
 '
 ' REGION.BAS
 '
-#include "region.bi"
+#include "REGION.BI"
 
 redim shared regions(1) as region
 dim shared region_index as integer

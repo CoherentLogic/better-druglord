@@ -1,5 +1,5 @@
-#include "region.bi"
-#include "dlscreen.bi"
+#include "REGION.BI"
+#include "DLSCREEN.BI"
 
 public sub screen_init()
    color 7,0

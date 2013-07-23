@@ -1,23 +1,24 @@
-OBJS = main.o region.o ioevent.o dlscreen.o level.o
+OBJS = MAIN.O REGION.O IOEVENT.O DLSCREEN.O LEVEL.O
 
-druglord.exe: $(OBJS) 
-	fbc -x druglord.exe $(OBJS)
+DRUGLORD.EXE: $(OBJS) 
+	fbc -x DRUGLORD.EXE $(OBJS)
 
-main.o: main.bas
-	fbc -m main -c main.bas
+MAIN.O: MAIN.BAS
+	fbc -m MAIN -c MAIN.BAS
 
-region.o: region.bas
-	fbc -c region.bas
+REGION.O: REGION.BAS
+	fbc -c REGION.BAS
 
-ioevent.o: ioevent.bas
-	fbc -c ioevent.bas
+IOEVENT.O: IOEVENT.BAS
+	fbc -c IOEVENT.BAS
 
-dlscreen.o: dlscreen.bas
-	fbc -c dlscreen.bas
+DLSCREEN.O: DLSCREEN.BAS
+	fbc -c DLSCREEN.BAS
 
-level.o: level.bas
-	fbc -c level.bas
+LEVEL.O: LEVEL.BAS
+	fbc -c LEVEL.BAS
 
 clean:
 	rm *.o
-	rm druglord
+	rm *.O
+	rm DRUGLORD.EXE

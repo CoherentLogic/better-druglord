@@ -1,8 +1,8 @@
 '
 ' ioevent.bas
 '
-#include "ioevent.bi"
-#include "keyb.bi"
+#include "IOEVENT.BI"
+#include "KEYB.BI"
 
 public function get_next_event(input_mode as integer) as integer
     

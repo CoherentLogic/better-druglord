@@ -9,11 +9,14 @@ declare sub le_repaint()
 declare sub le_bounds_check()
 declare sub le_set_data(element_type as integer, metadata as integer)
 declare sub le_file_load(filename as string)
+declare sub le_file_write()
 declare sub le_init_npc(idx as integer)
 declare sub le_init_vendor(idx as integer)
 declare function le_choose_faction() as integer
 declare function le_choose_weapon() as integer
 declare sub le_set_npc()
+declare function le_yes_no(prompt as string) as integer
+declare sub le_set_vendor()
 
 common shared level_current_page as integer
 common shared level_total_pages as integer
@@ -69,8 +72,15 @@ type vendor_record
     stock_heroin as integer
     price_heroin as integer
     stock_knives as integer
+    price_knives as integer
     stock_brassknuckles as integer
-    stock_guns as integer
+    price_brassknuckles as integer
+    stock_handguns as integer
+    price_handguns as integer
+    stock_rifles as integer
+    price_rifles as integer
+    stock_machineguns as integer
+    price_machineguns as integer
 end type
 
 type page_record
@@ -110,7 +120,7 @@ const WEAPON_MACHINEGUN = 6
 #endif
 
 #ifdef __FB_LINUX__
-
+    
 #endif
 
 #ifdef __FB_WIN32__
